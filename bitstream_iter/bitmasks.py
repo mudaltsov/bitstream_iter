@@ -2,7 +2,7 @@
 
 Bit masks provide a flexible way of converting between bits and integers.
 They support arbitrary integer widths, signed values, and any bit ordering.
-Some use cases may also duplicate or merge bits using special masks.
+Some use cases may filter, duplicate, or merge bits using special masks.
 
 A few standard masks are provided for convenience:
 
@@ -31,7 +31,7 @@ Custom masks can be created manually, or using create().
 """
 
 import itertools
-from typing import Any, Iterable, Sequence, Tuple
+from typing import Any, Iterable, Iterator, Sequence, Tuple
 
 
 def create(width: int, signed: bool, lsb_first: bool = False,
@@ -70,8 +70,8 @@ def create(width: int, signed: bool, lsb_first: bool = False,
     return tuple(itertools.chain.from_iterable(groups))
 
 
-def apply(masks: Sequence[int], value: int) -> Iterable[int]:
-    """Apply each bit mask the given value using bitwise AND.
+def apply(masks: Sequence[int], value: int) -> Iterator[int]:
+    """Apply each bit mask to the given value using bitwise AND.
 
     Args:
         masks: Bit masks to apply.
@@ -79,7 +79,7 @@ def apply(masks: Sequence[int], value: int) -> Iterable[int]:
         value: Value to mask.
 
     Returns:
-        Iterable with each mask independently applied to the value.
+        Iterator with each mask independently applied to the value.
     """
     return ((value & mask) for mask in masks)
 
