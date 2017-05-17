@@ -1,5 +1,6 @@
 import itertools
-from typing import Any, Iterable, Iterator, List, NewType, Sequence
+from collections import deque
+from typing import Any, Iterable, Iterator, MutableSequence, NewType, Sequence
 
 from bitstream_iter import bitmasks
 
@@ -15,7 +16,7 @@ def make_bit(value: Any) -> Bit:
 
 
 class BitStream:
-    """Binary stream that uses iterators for I/O at the bit level.
+    """Binary stream that uses iterators for I/O with bit granularity.
 
     BitStream()                   -> empty BitStream
     BitStream(bits)               -> BitStream with bit values
@@ -46,11 +47,11 @@ class BitStream:
                 bytes/ints. Default is 0 to consume all bits from the stream.
                 None leaves unused bits in the stream, and requires a new
                 iterator to read data after adding more bits.
-
         """
-        self._bit_sources = []  # type: List[Iterator[Bit]]
         self.byte_bitmasks = byte_bitmasks or bitmasks.UINT8_MSB_FIRST
         self.end_fill = None if end_fill is None else Bit(end_fill)
+
+        self._bit_sources = deque()  # type: MutableSequence[Iterator[Bit]]
 
         if bits is not None:
             self.write_bits(bits)
@@ -91,13 +92,19 @@ class BitStream:
     def __iter__(self) -> Iterator[Bit]:
         """Implements iter(self).
 
-        Returns:
-            Iterator that produces 0 or 1 for each bit consumed from the
-            start of the stream, until all bits have been exhausted.
-            After the end of the stream is reached, any new data written to
-            the stream is only accessible by creating a new iterator.
+        Yields:
+            Next bit value as integer 0 or 1, consumed from the start of the
+            stream until all all bits have been exhausted. After the end of
+            the stream is reached, any new data written to the stream is only
+            accessible by creating a new iterator.
         """
-        return itertools.chain.from_iterable(self._bit_sources)
+        while len(self._bit_sources):
+            bit = next(self._bit_sources[0], None)
+            if bit is None:
+                del self._bit_sources[0]
+                continue
+
+            yield bit
 
     def iter_bytes(self, masks: Sequence[int] = None,
                    end_fill: Any = -1) -> Iterator[int]:
