@@ -165,7 +165,7 @@ class BitStream:
             yield bitmasks.combine(masks=masks, bits=bits)
 
     def write_bits(self, values: Iterable[Any],
-                   at_start: bool = False) -> 'BitStream':
+                   at_start: bool = False) -> None:
         """Write lazily accessed bits at the end or start of the stream.
 
         Args:
@@ -173,9 +173,6 @@ class BitStream:
                 Each value is converted to 0 or 1 by truth value testing.
 
             at_start: Write bits at the start of the stream instead of the end.
-
-        Returns:
-            The same BitStream instance, as a convenience for consuming data.
         """
         bits = (make_bit(b) for b in values)
         if at_start:
@@ -183,10 +180,8 @@ class BitStream:
         else:
             self._bit_sources.append(bits)
 
-        return self
-
     def write_bytes(self, values: Iterable[int], masks: Sequence[int] = None,
-                    at_start: bool = False) -> 'BitStream':
+                    at_start: bool = False) -> None:
         """Write lazily accessed bytes at the end or start of the stream.
 
         Args:
@@ -196,15 +191,12 @@ class BitStream:
                 Default is byte_bitmasks specified in the constructor.
 
             at_start: Write bits at the start of the stream instead of the end.
-
-        Returns:
-            The same BitStream instance, as a convenience for consuming data.
         """
         masks = masks or self.byte_bitmasks
-        return self.write_ints(values=values, masks=masks, at_start=at_start)
+        self.write_ints(values=values, masks=masks, at_start=at_start)
 
     def write_ints(self, values: Iterable[int], masks: Sequence[int],
-                   at_start: bool = False) -> 'BitStream':
+                   at_start: bool = False) -> None:
         """Write lazily accessed integers at the end or start of the stream.
 
         Args:
@@ -213,11 +205,8 @@ class BitStream:
             masks: Bit masks applied to each integer to produce bits.
 
             at_start: Write bits at the start of the stream instead of the end.
-
-        Returns:
-            The same BitStream instance, as a convenience for consuming data.
         """
         masked_values = (bitmasks.apply(masks=masks, value=v) for v in values)
         flat_values = itertools.chain.from_iterable(masked_values)
 
-        return self.write_bits(values=flat_values, at_start=at_start)
+        self.write_bits(values=flat_values, at_start=at_start)
